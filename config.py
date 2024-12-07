@@ -12,7 +12,6 @@ buffer = 15
 # Set safe mode
 safe_mode = True
 
-# Set credentials
 # Load environment variables from .env file
 load_dotenv('./secrets.env')
 
