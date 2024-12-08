@@ -10,7 +10,7 @@ import IPython
 import time
 import datetime
 import platform
-from config import employee_number, password, query_dates, buffer, safe_mode, headless
+from config import employee_number, password, query_dates, preferred_shift_start_times, buffer, safe_mode, headless
 
 print("Starting the Scheduling Bot...")
 print(f"Employee Number: {employee_number}")
@@ -86,19 +86,19 @@ while True:
         print("-"*50)
         for shift in shifts:
             
-
+            # Find the shift description, details, and start time
             shift_description = shift.find_element(By.XPATH, "./div[1]")
             print(f"Shift Description: {shift_description.text}")
 
             shift_details = shift.find_element(By.XPATH, "./div[2]")
             print(f"Shift Details: {shift_details.text}")
 
-            shift_start_time = shift_details.find_element(By.XPATH, "./table/tbody/tr/td[3]")
-            formatted_shift_start_time = shift_start_time.text.split('– ')[0].strip()
-            print(f"Shift Start Time: {formatted_shift_start_time}")
+            shift_hours = shift_details.find_element(By.XPATH, "./table/tbody/tr/td[3]")
+            shift_start_time = shift_hours.text.split('– ')[0].strip()
+            print(f"Shift Start Time: {shift_start_time}")
             
-            # Check if formatted_shift_start_time is in the day
-            if formatted_shift_start_time == "07:30":
+            # Check if formatted_shift_start_time is in the preferred_shift_start_times list
+            if shift_start_time in preferred_shift_start_times:
                 print("Shift is in the day.")
                        
                 # Find the request button within the shift_actions element

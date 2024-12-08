@@ -5,6 +5,14 @@ from dotenv import load_dotenv
 query_dates = [
     "2024-12-25"
     ]
+
+# Set preffered shift start times
+preferred_shift_start_times = [
+    "07:30",
+    "11:30",
+    "15:30",
+]
+
 # Set the buffer time in seconds
 buffer = 15
 
