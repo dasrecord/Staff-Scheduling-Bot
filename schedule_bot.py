@@ -8,6 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import IPython
 import time
 import datetime
+import platform
 from config import employee_number, password, query_dates, buffer, safe_mode, headless
 
 print("Starting the Scheduling Bot...")
@@ -17,6 +18,9 @@ print(f"Buffer Time: {buffer} seconds")
 print(f"Safe Mode: {'Enabled' if safe_mode else 'Disabled'}")
 print(f"Headless Mode: {'Enabled' if headless else 'Disabled'}")
 print("-"*50)
+
+# Determine the current operating system
+current_os = platform.system()
 
 # Set up the WebDriver headless mode
 if headless:
@@ -50,7 +54,12 @@ while True:
     for query_date in query_dates:
         # Convert query_date to MMM DD, YYYY format
         query_date_obj = datetime.datetime.strptime(query_date, "%Y-%m-%d")
-        formatted_date = query_date_obj.strftime("%b %-d, %Y")
+
+        # Format the date based on the operating system
+        if current_os == "Windows":
+            formatted_date = query_date_obj.strftime("%b %#d, %Y")
+        else:
+            formatted_date = query_date_obj.strftime("%b %-d, %Y")
 
         # Navigate to the schedule page
         driver.get(f"https://sask.staffscheduling.ca/api/v1/prebooking-calendar/me?date={query_date}")
@@ -85,6 +94,7 @@ while True:
         if request_button.text == "Request Shift":
             request_button.click()
 
+            time.sleep(3)
             modal = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
             )
