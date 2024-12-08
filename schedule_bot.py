@@ -27,8 +27,8 @@ if headless:
 else:
     options = None
 
+# Initialize the WebDriver
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
 
 # Navigate to the login page
 driver.get("https://sask.staffscheduling.ca/login/")
