@@ -39,7 +39,6 @@ password_field = driver.find_element(By.ID, "id_password")
 employee_number_field.send_keys(employee_number)
 password_field.send_keys(password)
 
-
 # Submit the form
 print("-"*50)
 print("Logging in...")
