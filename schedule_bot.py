@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
@@ -98,8 +99,11 @@ while True:
             modal = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
             )
-
-            final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+            
+            try:
+                final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+            except NoSuchElementException:
+                final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
             if not safe_mode:
                 print("Shift is Available")
