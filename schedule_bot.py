@@ -120,12 +120,12 @@ while True:
                         except NoSuchElementException:
                             final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
-                            print("Shift is Available")
-                            final_request_button.click()
-                            print(f"Shift requested for {formatted_date}.")       
-                            print("-"*50) 
-                            close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
-                            close_modal_button.click()
+                        print("Shift is Available")
+                        final_request_button.click()
+                        print(f"Shift requested for {formatted_date}.")       
+                        print("-"*50) 
+                        close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                        close_modal_button.click()
 
                     elif request_button.text == "Processing":
                         print("Shift is Processing. Shift not requested.")
