@@ -15,7 +15,6 @@ safe_mode = True
 # Set headless to True to run the bot in headless mode
 headless = False
 
-
 # Load environment variables from .env file
 load_dotenv('./secrets.env')
 
