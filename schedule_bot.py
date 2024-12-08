@@ -71,7 +71,7 @@ while True:
         # Wait for the page to load
         time.sleep(1)
 
-        # Find an element by its inner text based on the formatted date
+        # Find the date element by its inner text based on the formatted date
         located_date = driver.find_element(By.XPATH, f"//*[contains(text(), '{formatted_date}')]")
         print(f"Checking availability for {formatted_date}.")
         print("-"*50)
@@ -85,43 +85,59 @@ while True:
         print(f"Found {len(shifts)} shifts for {formatted_date}.")
         print("-"*50)
         for shift in shifts:
+            
 
             shift_description = shift.find_element(By.XPATH, "./div[1]")
             print(f"Shift Description: {shift_description.text}")
+
             shift_details = shift.find_element(By.XPATH, "./div[2]")
             print(f"Shift Details: {shift_details.text}")
-            shift_actions = shift.find_element(By.XPATH, "./div[3]")
 
+            shift_start_time = shift_details.find_element(By.XPATH, "./table/tbody/tr/td[3]")
+            formatted_shift_start_time = shift_start_time.text.split('– ')[0].strip()
+            print(f"Shift Start Time: {formatted_shift_start_time}")
+            
+            # Check if formatted_shift_start_time is in the day
+            if formatted_shift_start_time == "07:30":
+                print("Shift is in the day.")
+                       
+                # Find the request button within the shift_actions element
+                shift_actions = shift.find_element(By.XPATH, "./div[3]")
+                request_button = shift_actions.find_element(By.XPATH, "./div[2]/div[1]/*")
+                if not safe_mode:
+                    if request_button.text == "Request Shift":
+                        request_button.click()
 
-            # Find the request button within the shift_actions element
-            request_button = shift_actions.find_element(By.XPATH, "./div[2]/div[1]/*")
-            if not safe_mode:
-                if request_button.text == "Request Shift":
-                    request_button.click()
+                        time.sleep(1)
+                        modal = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
+                        )
+                        
+                        try:
+                            final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+                        except NoSuchElementException:
+                            final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
-                    time.sleep(1)
-                    modal = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
-                    )
-                    
-                    try:
-                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
-                    except NoSuchElementException:
-                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
+                            print("Shift is Available")
+                            final_request_button.click()
+                            print(f"Shift requested for {formatted_date}.")       
+                            print("-"*50) 
+                            close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                            close_modal_button.click()
 
-                        print("Shift is Available")
-                        final_request_button.click()
-                        print(f"Shift requested for {formatted_date}.")       
-                        print("-"*50) 
-                        close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
-                        close_modal_button.click()
+                    elif request_button.text == "Processing":
+                        print("Shift is Processing. Shift not requested.")
+                        print("-"*50)
+                        pass
+                else:
+                    print("Currently in safe mode. Shift not requested.")
+                    print("-"*50)
+                    pass
             else:
-                print("Currently in safe mode. Shift not requested.")
-
-            elif request_button.text == "Processing":
-                print("Shift is Processing. Shift not requested.")
+                print("Shift is not in the day. Shift not requested.")
                 print("-"*50)
                 pass
+
 
     # Wait for 15 seconds before the next iteration
     print(f"Waiting for {buffer} seconds before checking for the next date.")
