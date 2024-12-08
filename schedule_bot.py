@@ -141,6 +141,7 @@ while True:
 
     # Wait for 15 seconds before the next iteration
     print(f"Waiting for {buffer} seconds before checking for the next date.")
+    print("-"*50)
     time.sleep(buffer)
 
 # Open an IPython shell to manually enter driver commands
