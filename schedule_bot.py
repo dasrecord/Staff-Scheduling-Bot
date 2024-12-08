@@ -8,16 +8,24 @@ from webdriver_manager.chrome import ChromeDriverManager
 import IPython
 import time
 import datetime
-from config import employee_number, password, query_dates, buffer, safe_mode
+from config import employee_number, password, query_dates, buffer, safe_mode, headless
 
-
-
+print("Starting the Scheduling Bot...")
+print(f"Employee Number: {employee_number}")
+print(f"Query Dates: {', '.join(query_dates)}")
+print(f"Buffer Time: {buffer} seconds")
+print(f"Safe Mode: {'Enabled' if safe_mode else 'Disabled'}")
+print(f"Headless Mode: {'Enabled' if headless else 'Disabled'}")
+print("-"*50)
 
 # Set up the WebDriver headless mode
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
+if headless:
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+else:
+    options = None
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
