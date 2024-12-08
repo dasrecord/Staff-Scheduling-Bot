@@ -28,6 +28,3 @@ load_dotenv('./secrets.env')
 # Set credentials
 employee_number = os.getenv('EMPLOYEE_NUMBER')
 password = os.getenv('PASSWORD')
-
-
-

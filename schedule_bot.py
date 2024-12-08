@@ -12,6 +12,7 @@ import datetime
 import platform
 from config import employee_number, password, query_dates, preferred_shift_start_times, buffer, safe_mode, headless
 
+print("-"*50)
 print("Starting the Scheduling Bot...")
 print(f"Employee Number: {employee_number}")
 print(f"Query Dates: {', '.join(query_dates)}")
