@@ -10,14 +10,13 @@ import IPython
 import time
 import datetime
 import platform
-from config import employee_number, password, query_dates, preferred_shift_start_times, buffer, safe_mode, headless
+from config import employee_number, password, query_dates, preferred_shift_start_times, safe_mode, headless
 
 print("-" * 75)
 print("Starting the Scheduling Bot...")
 print(f"{'Employee Number:':<50} {employee_number}")
 print(f"{'Query Dates:':<50} {', '.join(query_dates)}")
 print(f"{'Preferred Start Times:':<50} {', '.join(preferred_shift_start_times)}")
-print(f"{'Buffer Time:':<50} {buffer} seconds")
 print(f"{'Safe Mode:':<50} {'Enabled' if safe_mode else 'Disabled'}")
 print(f"{'Headless Mode:':<50} {'Enabled' if headless else 'Disabled'}")
 print("-" * 75)
@@ -36,6 +35,9 @@ else:
 
 # Initialize the WebDriver
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+# Set the buffer time in seconds
+buffer = 5
 
 # Navigate to the login page
 driver.get("https://sask.staffscheduling.ca/login/")
@@ -145,9 +147,9 @@ while True:
             time.sleep(buffer)
 
     # Wait for buffer time before the next date
-    print(f"Waiting for {buffer} seconds before checking for the next date.")
+    print(f"Waiting for {buffer*2} seconds before checking for the next date.")
     print("-"*100)
-    time.sleep(buffer)
+    time.sleep(buffer*2)
 
 # Open an IPython shell to manually enter driver commands
 IPython.embed()

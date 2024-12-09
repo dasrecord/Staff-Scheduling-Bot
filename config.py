@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 # Set query dates
 query_dates = [
-    "2024-12-25"
+    "2009-01-03"
     ]
 
 # Set preffered shift start times
@@ -12,9 +12,6 @@ preferred_shift_start_times = [
     "11:30",
     "15:30",
 ]
-
-# Set the buffer time in seconds
-buffer = 5
 
 # Set safe mode to True to prevent the bot from requesting shifts
 safe_mode = True
