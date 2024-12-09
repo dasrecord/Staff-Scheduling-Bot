@@ -12,7 +12,6 @@ import datetime
 import platform
 from config import employee_number, password, query_dates, preferred_shift_start_times, buffer, safe_mode, headless
 
-
 print("-" * 75)
 print("Starting the Scheduling Bot...")
 print(f"{'Employee Number:':<50} {employee_number}")
@@ -109,9 +108,10 @@ while True:
                 request_button = shift_actions.find_element(By.XPATH, "./div[2]/div[1]/*")
                 if not safe_mode:
                     if request_button.text == "Request Shift":
+                        print("Shift is Available")
                         request_button.click()
-
                         time.sleep(1)
+
                         modal = WebDriverWait(driver, 10).until(
                             EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
                         )
@@ -121,7 +121,6 @@ while True:
                         except NoSuchElementException:
                             final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
-                        print("Shift is Available")
                         final_request_button.click()
                         print(f"Shift requested for {formatted_date}.")       
                         print("-"*100) 
@@ -144,8 +143,6 @@ while True:
             print(f"Waiting for {buffer} seconds before checking for the next shift.")
             print("-"*100)
             time.sleep(buffer)
-
-
 
     # Wait for buffer time before the next date
     print(f"Waiting for {buffer} seconds before checking for the next date.")
