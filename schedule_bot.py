@@ -12,15 +12,16 @@ import datetime
 import platform
 from config import employee_number, password, query_dates, preferred_shift_start_times, buffer, safe_mode, headless
 
-print("-"*50)
+
+print("-" * 75)
 print("Starting the Scheduling Bot...")
-print(f"Employee Number: {employee_number}")
-print(f"Query Dates: {', '.join(query_dates)}")
-print(f"Preferred Shift Start Times: {', '.join(preferred_shift_start_times)}")
-print(f"Buffer Time: {buffer} seconds")
-print(f"Safe Mode: {'Enabled' if safe_mode else 'Disabled'}")
-print(f"Headless Mode: {'Enabled' if headless else 'Disabled'}")
-print("-"*50)
+print(f"{'Employee Number:':<50} {employee_number}")
+print(f"{'Query Dates:':<50} {', '.join(query_dates)}")
+print(f"{'Preferred Start Times:':<50} {', '.join(preferred_shift_start_times)}")
+print(f"{'Buffer Time:':<50} {buffer} seconds")
+print(f"{'Safe Mode:':<50} {'Enabled' if safe_mode else 'Disabled'}")
+print(f"{'Headless Mode:':<50} {'Enabled' if headless else 'Disabled'}")
+print("-" * 75)
 
 # Determine the current operating system
 current_os = platform.system()
@@ -47,11 +48,11 @@ employee_number_field.send_keys(employee_number)
 password_field.send_keys(password)
 
 # Submit the form
-print("-"*50)
+print("-"*100)
 print("Logging in...")
 password_field.send_keys(Keys.RETURN)
 print("Logged in successfully.")
-print("-"*50)
+print("-"*100)
 
 while True:
     for query_date in query_dates:
@@ -76,7 +77,7 @@ while True:
         # Find the date element by its inner text based on the formatted date
         located_date = driver.find_element(By.XPATH, f"//*[contains(text(), '{formatted_date}')]")
         print(f"Checking availability for {formatted_date}.")
-        print("-"*50)
+        print("-"*100)
 
         # Find the next div within the same parent element
         wrapper = located_date.find_element(By.XPATH, "./following-sibling::div")
@@ -85,7 +86,7 @@ while True:
         shifts = wrapper.find_elements(By.CLASS_NAME, "box")
         
         print(f"Found {len(shifts)} shifts for {formatted_date}.")
-        print("-"*50)
+        print("-"*100)
         for shift in shifts:
             
             # Find the shift description, details, and start time
@@ -123,27 +124,32 @@ while True:
                         print("Shift is Available")
                         final_request_button.click()
                         print(f"Shift requested for {formatted_date}.")       
-                        print("-"*50) 
+                        print("-"*100) 
                         close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
                         close_modal_button.click()
 
                     elif request_button.text == "Processing":
                         print("Shift is Processing. Shift not requested.")
-                        print("-"*50)
+                        print("-"*100)
                         pass
                 else:
                     print("Currently in safe mode. Shift not requested.")
-                    print("-"*50)
+                    print("-"*100)
                     pass
             else:
                 print("Shift is not in the day. Shift not requested.")
-                print("-"*50)
+                print("-"*100)
                 pass
+            # Wait for buffer time before the next shift
+            print(f"Waiting for {buffer} seconds before checking for the next shift.")
+            print("-"*100)
+            time.sleep(buffer)
 
 
-    # Wait for 15 seconds before the next iteration
+
+    # Wait for buffer time before the next date
     print(f"Waiting for {buffer} seconds before checking for the next date.")
-    print("-"*50)
+    print("-"*100)
     time.sleep(buffer)
 
 # Open an IPython shell to manually enter driver commands

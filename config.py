@@ -14,7 +14,7 @@ preferred_shift_start_times = [
 ]
 
 # Set the buffer time in seconds
-buffer = 15
+buffer = 5
 
 # Set safe mode to True to prevent the bot from requesting shifts
 safe_mode = True
