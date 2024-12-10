@@ -146,7 +146,7 @@ while True:
                     print("Shift is not in the day. Shift not requested.")
                     print("-"*100)
                     pass
-
+                
                 # Wait for buffer time before the next shift
                 print(f"Waiting for {intershift_buffer} seconds before checking for the next shift.")
                 print("-"*100)
