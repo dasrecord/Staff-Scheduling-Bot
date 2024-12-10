@@ -52,11 +52,11 @@ employee_number_field.send_keys(employee_number)
 password_field.send_keys(password)
 
 # Submit the form
-print("-"*100)
+print("-"*75)
 print("Logging in...")
 password_field.send_keys(Keys.RETURN)
 print("Logged in successfully.")
-print("-"*100)
+print("-"*75)
 
 while True:
     for query_date in query_dates:
@@ -77,7 +77,7 @@ while True:
             # Find the date element by its inner text based on the formatted date
             located_date = driver.find_element(By.XPATH, f"//*[contains(text(), '{formatted_date}')]")
             print(f"Checking availability for {formatted_date}.")
-            print("-"*100)
+            print("-"*75)
 
             # Find the next div within the same parent element
             wrapper = located_date.find_element(By.XPATH, "./following-sibling::div")
@@ -86,7 +86,7 @@ while True:
             shifts = wrapper.find_elements(By.CLASS_NAME, "box")
             
             print(f"Found {len(shifts)} shifts for {formatted_date}.")
-            print("-"*100)
+            print("-"*75)
             for shift in shifts:
                 
                 # Find the shift description, details, and start time
@@ -128,33 +128,33 @@ while True:
 
                             final_request_button.click()
                             print(f"Shift requested for {formatted_date}.")       
-                            print("-"*100) 
+                            print("-"*75) 
                             close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
                             close_modal_button.click()
 
                         elif request_button.text == "Processing":
                             print("Shift is Processing. Shift not requested.")
-                            print("-"*100)
+                            print("-"*75)
                             pass
 
                     else:
                         print("Currently in safe mode. Shift not requested.")
-                        print("-"*100)
+                        print("-"*75)
                         pass
 
                 else:
                     print("Shift is not in the day. Shift not requested.")
-                    print("-"*100)
+                    print("-"*75)
                     pass
                 
                 # Wait for buffer time before the next shift
                 print(f"Waiting for {intershift_buffer} seconds before checking for the next shift.")
-                print("-"*100)
+                print("-"*75)
                 time.sleep(intershift_buffer)
                 
         except NoSuchElementException:
             print(f"No shifts found for {formatted_date}.")
-            print("-"*100)
+            print("-"*75)
             continue
 
     # Wait for buffer time before the next date
