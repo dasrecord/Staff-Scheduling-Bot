@@ -159,7 +159,7 @@ while True:
 
     # Wait for buffer time before the next date
     print(f"Waiting for {interdate_buffer} seconds before checking for the next date.")
-    print("-"*100)
+    print("-"*75)
     time.sleep(interdate_buffer)
 
 # Open an IPython shell to manually enter driver commands
