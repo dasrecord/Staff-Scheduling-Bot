@@ -71,7 +71,7 @@ while True:
         driver.set_window_size(1920, 1080)
 
         # Wait for the page to load
-        time.sleep(3)
+        time.sleep(1)
 
         try:
             # Find the date element by its inner text based on the formatted date
@@ -136,18 +136,22 @@ while True:
                             print("Shift is Processing. Shift not requested.")
                             print("-"*100)
                             pass
+
                     else:
                         print("Currently in safe mode. Shift not requested.")
                         print("-"*100)
                         pass
+
                 else:
                     print("Shift is not in the day. Shift not requested.")
                     print("-"*100)
                     pass
+
                 # Wait for buffer time before the next shift
-                print(f"Waiting for {buffer} seconds before checking for the next shift.")
+                print(f"Waiting for {intershift_buffer} seconds before checking for the next shift.")
                 print("-"*100)
-                time.sleep(buffer)
+                time.sleep(intershift_buffer)
+                
         except NoSuchElementException:
             print(f"No shifts found for {formatted_date}.")
             print("-"*100)
