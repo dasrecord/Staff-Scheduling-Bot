@@ -37,7 +37,7 @@ else:
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 # Set the intershift buffer time in seconds
-intershift_buffer = 1
+intershift_buffer = 3
 
 # Set the interdate buffer time in seconds
 interdate_buffer = 5
