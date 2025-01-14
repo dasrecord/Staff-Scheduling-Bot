@@ -11,6 +11,7 @@ import time
 import datetime
 import platform
 from config import employee_number, password, query_dates, preferred_shift_start_times, safe_mode, headless
+import requests
 
 print("-" * 75)
 print("Starting the Scheduling Bot...")
@@ -32,6 +33,12 @@ if headless:
     options.add_argument("--no-sandbox")
 else:
     options = None
+
+# Start the bot
+def ping(msg):
+    requests.post("https://relayproxy.vercel.app/das_record_slack", json={"text": msg})
+    print(msg)
+ping("Staff Scheduling Bot has started")
 
 # Initialize the WebDriver
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -124,7 +131,7 @@ while True:
                             final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
                         final_request_button.click()
-                        print(f"Shift requested for {formatted_date}.")       
+                        ping(f"Shift requested for {formatted_date}.")    
                         print("-"*100) 
                         close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
                         close_modal_button.click()
