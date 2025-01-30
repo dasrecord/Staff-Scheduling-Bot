@@ -36,7 +36,14 @@ else:
 
 # Start the bot
 def ping(msg):
-    requests.post("https://relayproxy.vercel.app/das_record_slack", json={"text": msg})
+    try:
+        requests.post(
+            "https://relayproxy.vercel.app/das_record_slack",
+            json={"text": msg},
+            headers={"Content-Type": "application/json"}
+        )
+    except requests.RequestException:
+        pass
     print(msg)
 ping("Staff Scheduling Bot has started")
 
@@ -82,7 +89,11 @@ while True:
 
         try:
             # Find the date element by its inner text based on the formatted date
-            located_date = driver.find_element(By.XPATH, f"//*[contains(text(), '{formatted_date}')]")
+            try:
+                located_date = driver.find_element(By.XPATH, f"//*[contains(text(), '{formatted_date}')]")
+            except NoSuchElementException:
+                print(f"Date {formatted_date} not found on the page.")
+                continue
             print(f"Checking availability for {formatted_date}.")
             print("-"*75)
 
@@ -134,7 +145,7 @@ while True:
                                 final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
                             final_request_button.click()
-                            print(f"Shift requested for {formatted_date}.")       
+                            ping(f"Shift requested for {formatted_date}.")       
                             print("-"*75) 
                             close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
                             close_modal_button.click()
