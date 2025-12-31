@@ -76,7 +76,10 @@ while True:
     for query_date in query_dates:
         # Convert query_date to MMM DD, YYYY format
         query_date_obj = datetime.datetime.strptime(query_date, "%Y-%m-%d")
-        formatted_date = query_date_obj.strftime("%b %-d, %Y")
+        if platform.system() == "Windows":
+            formatted_date = query_date_obj.strftime("%b %#d, %Y")
+        else:
+            formatted_date = query_date_obj.strftime("%b %-d, %Y")
 
         # Navigate to the schedule page
         driver.get(f"https://sask.staffscheduling.ca/api/v1/prebooking-calendar/me?date={query_date}")
@@ -95,18 +98,22 @@ while True:
                 print(f"Date {formatted_date} not found on the page.")
                 continue
             print(f"Checking availability for {formatted_date}.")
-            print("-"*75)
+            print("-")
 
             # Find the next div within the same parent element
             wrapper = located_date.find_element(By.XPATH, "./following-sibling::div")
 
             # Find all children of the wrapper element
             shifts = wrapper.find_elements(By.CLASS_NAME, "box")
-            
             print(f"Found {len(shifts)} shifts for {formatted_date}.")
-            print("-"*75)
+            print("-")
+
+            if not shifts:
+                print(f"No shifts found for {formatted_date}.")
+                print("-")
+                continue
+
             for shift in shifts:
-                
                 # Find the shift description, details, and start time
                 shift_description = shift.find_element(By.XPATH, "./div[1]")
                 print(f"Shift Description: {shift_description.text}")
@@ -117,11 +124,11 @@ while True:
                 shift_hours = shift_details.find_element(By.XPATH, "./table/tbody/tr/td[3]")
                 shift_start_time = shift_hours.text.split('– ')[0].strip()
                 print(f"Shift Start Time: {shift_start_time}")
-                
+
                 # Check if formatted_shift_start_time is in the preferred_shift_start_times list
                 if shift_start_time in preferred_shift_start_times:
                     print("Shift is in the day.")
-                        
+
                     # Find the request button within the shift_actions element
                     shift_actions = shift.find_element(By.XPATH, "./div[3]")
                     try:
@@ -135,39 +142,44 @@ while True:
                             request_button.click()
                             time.sleep(1)
 
-                            modal = WebDriverWait(driver, 10).until(
-                                EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
-                            )
-                            
+                            # Check if modal appears
                             try:
-                                final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
-                            except NoSuchElementException:
-                                final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
+                                modal = WebDriverWait(driver, 3).until(
+                                    EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
+                                )
+                                print("Modal detected. Interacting with modal elements.")
+                                try:
+                                    final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+                                except NoSuchElementException:
+                                    final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
 
-                            final_request_button.click()
-                            ping(f"Shift requested for {formatted_date}.")       
-                            print("-"*75) 
-                            close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
-                            close_modal_button.click()
+                                final_request_button.click()
+                                ping(f"Shift requested for {formatted_date}.")       
+                                print("-") 
+                                close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                                close_modal_button.click()
+
+                            except NoSuchElementException:
+                                print("No modal detected. Proceeding with direct interaction.")
 
                         elif request_button.text == "Processing":
                             print("Shift is Processing. Shift not requested.")
-                            print("-"*75)
+                            print("-")
                             pass
 
                     else:
                         print("Currently in safe mode. Shift not requested.")
-                        print("-"*75)
+                        print("-")
                         pass
 
                 else:
                     print("Shift is not in the day. Shift not requested.")
-                    print("-"*75)
+                    print("-")
                     pass
-                
+
                 # Wait for buffer time before the next shift
                 print(f"Waiting for {intershift_buffer} seconds before checking for the next shift.")
-                print("-"*75)
+                print("-")
                 time.sleep(intershift_buffer)
                 
         except NoSuchElementException:
