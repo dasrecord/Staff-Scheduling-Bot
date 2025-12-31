@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 # Set query dates
 query_dates = [
-    "2026-01-04"
+    "2026-01-14"
     ]
 
 # Set preffered shift start times
@@ -14,7 +14,7 @@ preferred_shift_start_times = [
 ]
 
 # Set safe mode to True to prevent the bot from requesting shifts
-safe_mode = True
+safe_mode = False
 
 # Set headless to True to run the bot in headless mode
 headless = False

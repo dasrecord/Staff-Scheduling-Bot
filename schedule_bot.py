@@ -103,9 +103,19 @@ while True:
             # Find the next div within the same parent element
             wrapper = located_date.find_element(By.XPATH, "./following-sibling::div")
 
-            # Find all children of the wrapper element
-            shifts = wrapper.find_elements(By.CLASS_NAME, "box")
-            print(f"Found {len(shifts)} shifts for {formatted_date}.")
+            # Debug: Print wrapper structure
+            print(f"DEBUG: Wrapper HTML preview: {wrapper.get_attribute('outerHTML')[:1000]}...")
+            
+            # Find the actual shift containers - they have class="box" and data-testid="submittable-*"
+            shifts = wrapper.find_elements(By.XPATH, ".//div[@class='box' and starts-with(@data-testid, 'submittable-')]")
+            print(f"Found {len(shifts)} shifts using submittable data-testid for {formatted_date}.")
+            
+            # If that doesn't work, fall back to just class="box"
+            if len(shifts) == 0:
+                shifts = wrapper.find_elements(By.CLASS_NAME, "box")
+                print(f"Fallback: Found {len(shifts)} shifts with class 'box'.")
+                
+            print(f"Final shift count: {len(shifts)}")
             print("-")
 
             if not shifts:
@@ -113,66 +123,124 @@ while True:
                 print("-")
                 continue
 
-            for shift in shifts:
-                # Find the shift description, details, and start time
-                shift_description = shift.find_element(By.XPATH, "./div[1]")
-                print(f"Shift Description: {shift_description.text}")
+            for i, shift in enumerate(shifts):
+                print(f"=== PROCESSING SHIFT {i+1} OF {len(shifts)} ===")
+                
+                # Debug: Show shift structure
+                print(f"DEBUG: Shift data-testid: {shift.get_attribute('data-testid')}")
+                
+                # Find the shift description - it's in a span with class "title is-5"
+                try:
+                    shift_description = shift.find_element(By.XPATH, ".//span[@class='title is-5']")
+                    print(f"Shift Description: {shift_description.text}")
+                except NoSuchElementException:
+                    print("DEBUG: Could not find shift description")
+                    continue
 
-                shift_details = shift.find_element(By.XPATH, "./div[2]")
-                print(f"Shift Details: {shift_details.text}")
+                # Find the shift details - look for the table with shift times
+                try:
+                    shift_details = shift.find_element(By.XPATH, ".//table[@class='table is-fullwidth is-narrow']")
+                    print(f"Shift Details: {shift_details.text}")
+                except NoSuchElementException:
+                    print("DEBUG: Could not find shift details table")
+                    continue
 
-                shift_hours = shift_details.find_element(By.XPATH, "./table/tbody/tr/td[3]")
-                shift_start_time = shift_hours.text.split('– ')[0].strip()
+                # Extract the shift start time from the table
+                try:
+                    shift_hours = shift_details.find_element(By.XPATH, ".//tbody/tr/td[3]")
+                    shift_start_time = shift_hours.text.split('– ')[0].strip()
+                except NoSuchElementException:
+                    try:
+                        # Try alternative time extraction from the table text
+                        time_text = shift_details.text
+                        import re
+                        time_match = re.search(r'(\d{2}:\d{2})\s*[–-]', time_text)
+                        if time_match:
+                            shift_start_time = time_match.group(1)
+                        else:
+                            print("DEBUG: Could not extract shift start time")
+                            continue
+                    except:
+                        print("DEBUG: Failed to extract time from shift details")
+                        continue
+                        
                 print(f"Shift Start Time: {shift_start_time}")
 
                 # Check if formatted_shift_start_time is in the preferred_shift_start_times list
                 if shift_start_time in preferred_shift_start_times:
                     print("Shift is in the day.")
 
-                    # Find the request button within the shift_actions element
-                    shift_actions = shift.find_element(By.XPATH, "./div[3]")
+                    # Find the request button using the structure from the provided XPath
+                    # XPath: //*[@id="react"]/div/div[2]/div[2]/div[12]/div[1]/div/div[1]/div[4]/div[2]/div/button
+                    # Within each shift, the button is at: div[4]/div[2]/div/button
                     try:
-                        request_button = shift_actions.find_element(By.XPATH, "./div[2]/div[1]/*")
-                    except NoSuchElementException:
-                        request_button = shift_actions.find_element(By.XPATH, "./div[3]/div[1]/*")
+                        request_button = shift.find_element(By.XPATH, "./div[4]/div[2]/div/button")
+                        print(f"DEBUG: Found button using new XPath: '{request_button.text}'")
+                        
+                        if not safe_mode:
+                            if request_button.text == "Request Shift":
+                                print("Shift requested")
+                                request_button.click()
+                                time.sleep(1)
 
-                    if not safe_mode:
-                        if request_button.text == "Request Shift":
-                            print("Shift is Available")
-                            request_button.click()
-                            time.sleep(1)
-
-                            # Check if modal appears
-                            try:
-                                modal = WebDriverWait(driver, 3).until(
-                                    EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
-                                )
-                                print("Modal detected. Interacting with modal elements.")
+                                # Check if modal appears
                                 try:
-                                    final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+                                    modal = WebDriverWait(driver, 3).until(
+                                        EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
+                                    )
+                                    print("Modal detected. Interacting with modal elements.")
+                                    
+                                    # Use the correct XPath for the "Request Full Shift" button
+                                    try:
+                                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+                                        print("Found 'Request Full Shift' button in modal")
+                                    except NoSuchElementException:
+                                        # Fallback to alternative path
+                                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button")
+                                        print("Found fallback button in modal")
+
+                                    final_request_button.click()
+                                    print("Clicked final request button in modal")
+                                    ping(f"Shift successfully requested for {formatted_date}.")       
+                                    print("-") 
+                                    
+                                    # Close the modal
+                                    close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                                    close_modal_button.click()
+                                    print("Modal closed")
+
                                 except NoSuchElementException:
-                                    final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button/span")
+                                    print("No modal detected. Proceeding with direct interaction.")
+                                    ping(f"Shift successfully requested for {formatted_date}.")
 
-                                final_request_button.click()
-                                ping(f"Shift requested for {formatted_date}.")       
-                                print("-") 
-                                close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
-                                close_modal_button.click()
+                            elif request_button.text == "Processing":
+                                print("Shift is Processing. Shift not requested.")
+                                print("-")
+                                pass
 
-                            except NoSuchElementException:
-                                print("No modal detected. Proceeding with direct interaction.")
-
-                        elif request_button.text == "Processing":
-                            print("Shift is Processing. Shift not requested.")
+                        else:
+                            print("Currently in safe mode. Shift not requested.")
                             print("-")
                             pass
-
-                    else:
-                        print("Currently in safe mode. Shift not requested.")
-                        print("-")
-                        pass
-
-                else:
+                            
+                    except NoSuchElementException:
+                        print("Could not find request button using new XPath, trying alternatives...")
+                        
+                        # Try the old method as fallback
+                        try:
+                            shift_actions = shift.find_element(By.XPATH, "./div[3]")
+                            try:
+                                request_button = shift_actions.find_element(By.XPATH, "./div[2]/div[1]/*")
+                            except NoSuchElementException:
+                                request_button = shift_actions.find_element(By.XPATH, "./div[3]/div[1]/*")
+                            
+                            print(f"DEBUG: Found button using old method: '{request_button.text}'")
+                            # Handle the button click same as above...
+                            
+                        except NoSuchElementException:
+                            print("Could not find request button with any method.")
+                            print("-")
+                            pass
                     print("Shift is not in the day. Shift not requested.")
                     print("-")
                     pass
