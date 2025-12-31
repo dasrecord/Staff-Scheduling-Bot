@@ -103,19 +103,14 @@ while True:
             # Find the next div within the same parent element
             wrapper = located_date.find_element(By.XPATH, "./following-sibling::div")
 
-            # Debug: Print wrapper structure
-            print(f"DEBUG: Wrapper HTML preview: {wrapper.get_attribute('outerHTML')[:1000]}...")
-            
             # Find the actual shift containers - they have class="box" and data-testid="submittable-*"
             shifts = wrapper.find_elements(By.XPATH, ".//div[@class='box' and starts-with(@data-testid, 'submittable-')]")
-            print(f"Found {len(shifts)} shifts using submittable data-testid for {formatted_date}.")
             
             # If that doesn't work, fall back to just class="box"
             if len(shifts) == 0:
                 shifts = wrapper.find_elements(By.CLASS_NAME, "box")
-                print(f"Fallback: Found {len(shifts)} shifts with class 'box'.")
                 
-            print(f"Final shift count: {len(shifts)}")
+            print(f"Found {len(shifts)} available shifts for {formatted_date}.")
             print("-")
 
             if not shifts:
@@ -124,25 +119,22 @@ while True:
                 continue
 
             for i, shift in enumerate(shifts):
-                print(f"=== PROCESSING SHIFT {i+1} OF {len(shifts)} ===")
-                
-                # Debug: Show shift structure
-                print(f"DEBUG: Shift data-testid: {shift.get_attribute('data-testid')}")
+                print(f"=== CHECKING SHIFT {i+1} OF {len(shifts)} ===")
                 
                 # Find the shift description - it's in a span with class "title is-5"
                 try:
                     shift_description = shift.find_element(By.XPATH, ".//span[@class='title is-5']")
-                    print(f"Shift Description: {shift_description.text}")
+                    print(f"Shift: {shift_description.text}")
                 except NoSuchElementException:
-                    print("DEBUG: Could not find shift description")
+                    print("Could not identify shift description")
                     continue
 
                 # Find the shift details - look for the table with shift times
                 try:
                     shift_details = shift.find_element(By.XPATH, ".//table[@class='table is-fullwidth is-narrow']")
-                    print(f"Shift Details: {shift_details.text}")
+                    print(f"Times: {shift_details.text}")
                 except NoSuchElementException:
-                    print("DEBUG: Could not find shift details table")
+                    print("Could not find shift time details")
                     continue
 
                 # Extract the shift start time from the table
@@ -158,10 +150,10 @@ while True:
                         if time_match:
                             shift_start_time = time_match.group(1)
                         else:
-                            print("DEBUG: Could not extract shift start time")
+                            print("Could not extract shift start time")
                             continue
                     except:
-                        print("DEBUG: Failed to extract time from shift details")
+                        print("Failed to parse shift timing information")
                         continue
                         
                 print(f"Shift Start Time: {shift_start_time}")
@@ -175,11 +167,11 @@ while True:
                     # Within each shift, the button is at: div[4]/div[2]/div/button
                     try:
                         request_button = shift.find_element(By.XPATH, "./div[4]/div[2]/div/button")
-                        print(f"DEBUG: Found button using new XPath: '{request_button.text}'")
+                        button_text = request_button.text
                         
                         if not safe_mode:
-                            if request_button.text == "Request Shift":
-                                print("Shift requested")
+                            if button_text == "Request Shift":
+                                print("Requesting shift...")
                                 request_button.click()
                                 time.sleep(1)
 
@@ -188,44 +180,50 @@ while True:
                                     modal = WebDriverWait(driver, 3).until(
                                         EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
                                     )
-                                    print("Modal detected. Interacting with modal elements.")
+                                    print("Modal detected. Proceeding with full shift request.")
                                     
                                     # Use the correct XPath for the "Request Full Shift" button
                                     try:
                                         final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
-                                        print("Found 'Request Full Shift' button in modal")
+                                        print("Processing full shift request...")
                                     except NoSuchElementException:
                                         # Fallback to alternative path
                                         final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button")
-                                        print("Found fallback button in modal")
+                                        print("Processing full shift request...")
 
                                     final_request_button.click()
-                                    print("Clicked final request button in modal")
-                                    ping(f"Shift successfully requested for {formatted_date}.")       
+                                    time.sleep(1)  # Give the system time to process
+                                    ping(f"Shift successfully requested for {formatted_date}.")
+                                    print("✓ Shift request completed successfully")
                                     print("-") 
                                     
                                     # Close the modal
-                                    close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
-                                    close_modal_button.click()
-                                    print("Modal closed")
+                                    try:
+                                        close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                                        close_modal_button.click()
+                                        time.sleep(0.5)  # Brief pause for modal to close
+                                    except NoSuchElementException:
+                                        print("Modal closed automatically")
 
                                 except NoSuchElementException:
-                                    print("No modal detected. Proceeding with direct interaction.")
+                                    print("No modal detected. Shift requested directly.")
                                     ping(f"Shift successfully requested for {formatted_date}.")
 
-                            elif request_button.text == "Processing":
-                                print("Shift is Processing. Shift not requested.")
+                            elif button_text == "Processing":
+                                print("Shift is already being processed.")
                                 print("-")
-                                pass
+                            elif button_text in ["Requested", "Request Pending", "Submitted"]:
+                                print("Shift has already been requested.")
+                                print("-")
+                            else:
+                                print(f"Button state: {button_text} - No action taken.")
+                                print("-")
 
                         else:
                             print("Currently in safe mode. Shift not requested.")
                             print("-")
-                            pass
                             
                     except NoSuchElementException:
-                        print("Could not find request button using new XPath, trying alternatives...")
-                        
                         # Try the old method as fallback
                         try:
                             shift_actions = shift.find_element(By.XPATH, "./div[3]")
@@ -234,16 +232,22 @@ while True:
                             except NoSuchElementException:
                                 request_button = shift_actions.find_element(By.XPATH, "./div[3]/div[1]/*")
                             
-                            print(f"DEBUG: Found button using old method: '{request_button.text}'")
-                            # Handle the button click same as above...
+                            button_text = request_button.text
+                            if button_text == "Request Shift" and not safe_mode:
+                                print("Requesting shift (using fallback method)...")
+                                request_button.click()
+                                ping(f"Shift successfully requested for {formatted_date}.")
+                                print("✓ Shift request completed")
+                            else:
+                                print(f"Button state: {button_text} - No action taken.")
+                            print("-")
                             
                         except NoSuchElementException:
-                            print("Could not find request button with any method.")
+                            print("No request button found for this shift.")
                             print("-")
-                            pass
-                    print("Shift is not in the day. Shift not requested.")
+                else:
+                    print("Shift is not in the preferred time range.")
                     print("-")
-                    pass
 
                 # Wait for buffer time before the next shift
                 print(f"Waiting for {intershift_buffer} seconds before checking for the next shift.")
