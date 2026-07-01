@@ -1,7 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -173,41 +174,109 @@ while True:
                             if button_text == "Request Shift":
                                 print("Requesting shift...")
                                 request_button.click()
-                                time.sleep(1)
+                                time.sleep(2)
 
-                                # Check if modal appears
+                                # Check if modal appears - using correct selector for native dialog
+                                modal = None
                                 try:
-                                    modal = WebDriverWait(driver, 3).until(
-                                        EC.presence_of_element_located((By.ID, "react-aria-modal-dialog"))
+                                    # Look for the native dialog element
+                                    modal = WebDriverWait(driver, 10).until(
+                                        EC.visibility_of_element_located((By.CSS_SELECTOR, "dialog.native-dialog[open]"))
                                     )
                                     print("Modal detected. Proceeding with full shift request.")
-                                    
-                                    # Use the correct XPath for the "Request Full Shift" button
+                                    time.sleep(0.5)  # Small buffer for modal animation
+                                except TimeoutException:
+                                    # Fallback: try generic dialog tag
                                     try:
-                                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[2]/div/button")
+                                        modal = WebDriverWait(driver, 2).until(
+                                            EC.visibility_of_element_located((By.TAG_NAME, "dialog"))
+                                        )
+                                        print("Modal detected (generic dialog). Proceeding with full shift request.")
+                                        time.sleep(0.5)
+                                    except TimeoutException:
+                                        print("⚠️ No modal detected after clicking Request Shift")
+                                        print(f"Current URL: {driver.current_url}")
+                                        # Final fallback: check for any dialog/modal elements
+                                        try:
+                                            all_dialogs = driver.find_elements(By.CSS_SELECTOR, "dialog, div[class*='modal'], div[role='dialog']")
+                                            print(f"Found {len(all_dialogs)} potential modal/dialog elements on page")
+                                            if all_dialogs:
+                                                modal = all_dialogs[0]
+                                                print("Using first detected modal-like element")
+                                            else:
+                                                raise TimeoutException("No modal found")
+                                        except:
+                                            raise TimeoutException("No modal found after exhaustive search")
+                                
+                                if modal:
+                                    # Find the "Request Full Shift" button using the correct selector
+                                    try:
+                                        # Look for button with is-primary class containing "Request Full Shift" text
+                                        final_request_button = WebDriverWait(modal, 5).until(
+                                            EC.element_to_be_clickable((By.CSS_SELECTOR, "button.is-primary"))
+                                        )
+                                        print(f"Found button: '{final_request_button.text}'")
                                         print("Processing full shift request...")
-                                    except NoSuchElementException:
-                                        # Fallback to alternative path
-                                        final_request_button = modal.find_element(By.XPATH, "./div/div/div[2]/div[1]/div[2]/div/div/div[3]/div/button")
-                                        print("Processing full shift request...")
+                                    except:
+                                        # Fallback: find any button with "Request" in the text
+                                        try:
+                                            buttons = modal.find_elements(By.TAG_NAME, "button")
+                                            print(f"Found {len(buttons)} buttons in modal")
+                                            final_request_button = None
+                                            for btn in buttons:
+                                                btn_text = btn.text.strip()
+                                                print(f"  Button text: '{btn_text}'")
+                                                if "Request" in btn_text or "Submit" in btn_text or "Confirm" in btn_text:
+                                                    print(f"Found confirmation button: '{btn_text}'")
+                                                    final_request_button = btn
+                                                    break
+                                            if not final_request_button:
+                                                raise NoSuchElementException("Could not find confirmation button in modal")
+                                        except Exception as e:
+                                            print(f"Error finding button: {e}")
+                                            raise
 
                                     final_request_button.click()
-                                    time.sleep(1)  # Give the system time to process
+                                    time.sleep(1.5)  # Give the system time to process
                                     ping(f"Shift successfully requested for {formatted_date}.")
                                     print("✓ Shift request completed successfully")
                                     print("-") 
                                     
-                                    # Close the modal
+                                    # Close the modal using the correct selector
                                     try:
-                                        close_modal_button = modal.find_element(By.XPATH, "./div/div/div[1]/div[2]/button")
+                                        # Look for button with aria-label="Dismiss Modal"
+                                        close_modal_button = WebDriverWait(driver, 5).until(
+                                            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Dismiss Modal']"))
+                                        )
                                         close_modal_button.click()
                                         time.sleep(0.5)  # Brief pause for modal to close
-                                    except NoSuchElementException:
-                                        print("Modal closed automatically")
-
-                                except NoSuchElementException:
-                                    print("No modal detected. Shift requested directly.")
-                                    ping(f"Shift successfully requested for {formatted_date}.")
+                                        print("Modal closed successfully")
+                                    except (NoSuchElementException, TimeoutException):
+                                        # Try alternative close methods
+                                        try:
+                                            # Try ESC key
+                                            ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+                                            time.sleep(0.5)
+                                            print("Modal closed with ESC key")
+                                        except:
+                                            print("Modal closed automatically or remains open")
+                                else:
+                                    # No modal appeared - might be direct request
+                                    print("No modal appeared. Checking if shift was requested directly...")
+                                    time.sleep(2)
+                                    # Check button state to see if request went through
+                                    try:
+                                        updated_button = shift.find_element(By.XPATH, "./div[4]/div[2]/div/button")
+                                        if updated_button.text in ["Processing", "Requested", "Request Pending", "Submitted"]:
+                                            ping(f"Shift successfully requested for {formatted_date} (direct request).")
+                                            print("✓ Shift request completed directly (no modal)")
+                                        else:
+                                            ping(f"⚠️ Shift request status unclear for {formatted_date}. Button shows: {updated_button.text}")
+                                            print(f"⚠️ Button state after click: {updated_button.text}")
+                                    except:
+                                        print("Could not verify shift request status")
+                                        ping(f"⚠️ Shift request failed or unclear for {formatted_date}")
+                                    print("-")
 
                             elif button_text == "Processing":
                                 print("Shift is already being processed.")

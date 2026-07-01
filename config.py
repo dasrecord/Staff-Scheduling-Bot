@@ -3,7 +3,8 @@ from dotenv import load_dotenv
 
 # Set query dates
 query_dates = [
-    "2026-01-14"
+    "2026-07-04",
+    "2026-07-05",
     ]
 
 # Set preffered shift start times
